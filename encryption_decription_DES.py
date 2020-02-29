@@ -263,19 +263,12 @@ def SW(res_fk_prec, right_prec):
     return right_prec + res_fk_prec
 
 # Chiffrer un plaintext (chaine de caractere de 8 bits) avec la cle k(chaine de caractere de 8 bits)
-def chiffrement(plaintext,k):
+def chiffrement(plaintext,key):
     plaintext_to_binary=text_to_bits(plaintext)
     plaintext_binary_to_list=convert_to_list(plaintext_to_binary)
    
     key_to_binary=text_to_bits(key)
     key_binary_to_list=convert_to_list(key_to_binary)
-    
-#    if(len(plaintext_binary_to_list) != 8):
-#        print("Le plaintext doit etre une chaine de caracteres avec une longueur 8 ")
-#        return -1
-#    if(len(key) != 10):
-#        print("La cle doit etre une chaine de caracteres avec une longueur 10 ")
-#        return -1
     
     
     key_table= generate_keys(key_binary_to_list)
@@ -298,7 +291,7 @@ def chiffrement(plaintext,k):
     
 
 # Dechiffrer un ciphertext (resultat du chiffrement de plaintext) avec la cle k
-def dechiffrement(ciphertext,k):
+def dechiffrement(ciphertext,key):
     plaintext_binary_to_list=convert_to_list(ciphertext)
     
     key_to_binary=text_to_bits(key)
@@ -327,7 +320,7 @@ def dechiffrement(ciphertext,k):
 
 
 def main(text, key):
-    res=False
+  
     if (type(text) != str) :
         print("Le text à chiffrer doit être une chaine de caractères !")
         return -1
@@ -344,8 +337,6 @@ def main(text, key):
         print 'PlainText avant le chiffrement: ',text
         
         ciphertext = chiffrement(text, key)
-        # print 'Chiffrement',ciphertext
-        
         plaintext = dechiffrement(ciphertext, key)
         print 'PlainText apres le dechiffrement: ',plaintext
         
