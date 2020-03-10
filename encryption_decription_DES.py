@@ -8,6 +8,7 @@ Created on Sat Feb 22 13:50:58 2020
 
 from operator import xor
 import binascii
+import numpy as np
 
 # les S-box
 s1=[[14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7],
@@ -105,7 +106,7 @@ def conversion_to_binary(decimal):
     #pour coder le decimal sur 4 bits
     while (len(tab)<4):
         tab.append(0)
-        
+
     reverse_tab = []
     for i in reversed(tab):
         reverse_tab.append(str(i))
@@ -157,7 +158,7 @@ def FP(lst):
      index_FP=[39,7,47,15,55,23,63,31,38,6,46,14,54,22,62,30,37,5,45,13,53,21,61,29,36,4,44,12,52,20,60,28,35,3,
                43,11,51,19,59,27,34,2,42,10,50,18,58,26,33,1,41,9,49,17,57,25,32,0,40,8,48,16,56,24]
      return General_Permutation(lst,index_FP)
- 
+
 #Permutation Choice One
 def PC1(lst):
     index_PC1=[56,48,40,32,24,16,8,0,57,49,41,33,25,17,9,1,58,50,42,34,26,18,10,2,59,51,43,35,62,54,46,38,30,
@@ -195,13 +196,13 @@ def LS_1_Bit(half_permuted_key):
 def LS_2_Bit(half_permuted_key):
     return LS_1_Bit(LS_1_Bit(half_permuted_key))
 
-# Concatener deux tableaux 
+# Concatener deux tableaux
 def concat_ls_keys(left, right):
     tab = []
     tab = left + right
     return tab
 
-# Generer les 16 cles a partir d une cles de 64 bits 
+# Generer les 16 cles a partir d une cles de 64 bits
 def generate_keys(key):
     tab_keys = []
     permuted_pc1 = PC1(key)
@@ -217,7 +218,7 @@ def generate_keys(key):
         else:
             left = LS_2_Bit(left_prec)
             right = LS_2_Bit(right_prec)
-            
+
         concat_ls_k = concat_ls_keys(left, right)
         k = PC2(concat_ls_k)
         tab_keys.append(k)
@@ -228,13 +229,13 @@ def F(right_half, k):
     res_EP = EP(right_half)
     #print 'ep', res_EP
     res_xor_EP_K = xor_EP_K(res_EP, k)
-   
+
     s_box=[s1,s2,s3,s4,s5,s6,s7,s8]
     count=0
     i=0
     binary_res_s=[]
     while (count<len(res_xor_EP_K )):
-        
+
         #print 'res_xor_EP_K1',res_xor_EP_K1
         line_s = conversion_to_decimal([res_xor_EP_K[0+count], res_xor_EP_K[5+count]])
         #print 'line_s0',line_s0
@@ -251,7 +252,7 @@ def F(right_half, k):
     permut_func = Permutation_Func(binary_res_s)
     #print("permut_func",len(permut_func))
     return permut_func
-    
+
 # fk fait le xor du resultat du F avec la partie gauche du resultat precedent
 def fk(res_prec, k):
     left, right = division(res_prec)
@@ -263,44 +264,40 @@ def SW(res_fk_prec, right_prec):
     return right_prec + res_fk_prec
 
 # Chiffrer un plaintext (chaine de caractere de 8 bits) avec la cle k(chaine de caractere de 8 bits)
-def chiffrement(plaintext,key):
-    plaintext_to_binary=text_to_bits(plaintext)
-    plaintext_binary_to_list=convert_to_list(plaintext_to_binary)
-   
+def chiffrement(plaintext_binary_to_list,key):
+
     key_to_binary=text_to_bits(key)
     key_binary_to_list=convert_to_list(key_to_binary)
-    
-    
+
     key_table= generate_keys(key_binary_to_list)
     res_IP=IP(plaintext_binary_to_list)
     res_prec=res_IP
-    
+
     for i in range (0,16):
         left_prec,right_prec=division(res_prec)
         res_fk=fk(res_prec,key_table[i])
         res_sw=SW(res_fk,right_prec)
         res_prec=res_sw
-   
-    left_res,right_res=division(res_prec)   
+
+    left_res,right_res=division(res_prec)
     res=SW(left_res,right_res)
     ciphertext_list=FP(res)
-    
-    # Conversion de la liste des caracteres en une chaine de caracteres 
+
+    # Conversion de la liste des caracteres en une chaine de caracteres
     ciphertext = convert_list_to_char(ciphertext_list)
     return ciphertext
-    
+
 
 # Dechiffrer un ciphertext (resultat du chiffrement de plaintext) avec la cle k
-def dechiffrement(ciphertext,key):
-    plaintext_binary_to_list=convert_to_list(ciphertext)
-    
+def dechiffrement(plaintext_binary_to_list,key):
+
     key_to_binary=text_to_bits(key)
     key_binary_to_list=convert_to_list(key_to_binary)
-    
+
     key_table= generate_keys(key_binary_to_list)
     res_IP=IP(plaintext_binary_to_list)
     res_prec=res_IP
-    
+
     i=15
     while i>=0:
         left_prec,right_prec=division(res_prec)
@@ -308,24 +305,30 @@ def dechiffrement(ciphertext,key):
         res_sw=SW(res_fk,right_prec)
         res_prec=res_sw
         i-=1
-   
-    left_res,right_res=division(res_prec)   
-    res=SW(left_res,right_res)    
+
+    left_res,right_res=division(res_prec)
+    res=SW(left_res,right_res)
     plaintext_list=FP(res)
-   
-    # Conversion de la liste des caracteres en une chaine de caracteres 
+
+    # Conversion de la liste des caracteres en une chaine de caracteres
     plaintext_binary = convert_list_to_char(plaintext_list)
     plaintext=text_from_bits(plaintext_binary)
     return plaintext
 
 
 def main(text, key):
-  
+    # Transformer le texte a chiffrer en bits
+    plaintext_to_binary = text_to_bits(text)
+
+    # Transformer le text a chiffrer(qui est en binaire)en un multiple de 64
+    while(len(plaintext_to_binary) % 64 != 0):
+        plaintext_to_binary = '0' + plaintext_to_binary
+
+    #  Transformer la representation binare du texte a chiffrer en un tableau de caracteres
+    plaintext_binary_to_list = convert_to_list(plaintext_to_binary)
+
     if (type(text) != str) :
         print("Le text à chiffrer doit être une chaine de caractères !")
-        return -1
-    elif (len(text) != 8):
-        print("Le text à chiffrer doit être une chaine de 8 caractères (64 bits) !")
         return -1
     elif (type(key) != str):
         print("La clé doit être une chaine de caractères !")
@@ -335,51 +338,63 @@ def main(text, key):
         return -1
     else:
         print 'PlainText avant le chiffrement: ',text
-        
-        ciphertext = chiffrement(text, key)
-        plaintext = dechiffrement(ciphertext, key)
+
+        # Separer en blocs de 64 bits pour cryptage
+        blocs_binary_plaintext = np.array_split(plaintext_binary_to_list,len(plaintext_binary_to_list)/64 )
+        # Chiffrage du message par blocs de 64 bits
+        ciphertext = ""
+        for i in range(0, len(blocs_binary_plaintext)):
+            ciphertext += chiffrement(blocs_binary_plaintext[i], key)
+
+        # Convertir le texte chiffre en une liste
+        ciphertext_binary_to_list = convert_to_list(ciphertext)
+        #  Separer en blocs de 64 bits pour decryptage
+        blocs_binary_ciphertext = np.array_split(ciphertext_binary_to_list,len(ciphertext_binary_to_list)/64 )
+        # Dechiffrage du message crypte par blocs de 64 bits
+        plaintext = ""
+        for i in range(0, len(blocs_binary_ciphertext)):
+            plaintext += dechiffrement(blocs_binary_ciphertext[i], key)
+
         print 'PlainText apres le dechiffrement: ',plaintext
-        
+
         if(text == plaintext):
-            print("Chiffrement et dechiffrement reussi avec la cle: ", key,"XD !")
+            print("Chiffrement et dechiffrement reussi avec la cle: "+key+"XD !")
             return 0
         else:
-            print("Chiffrement et dechiffrement non reussi avec la cle: ", key," X( !")
+            print("Chiffrement et dechiffrement non reussi avec la cle: "+ key +" X( !")
             return -2
-  
-
-print("")
-print("----------------------------------Test1--------------------------------------")
-res = main('Bonjour!', '12345678')
-
-print("")
-print("----------------------------------Test2--------------------------------------")
-res = main('Bonjour!', 'F9sGnd4$')
 
 
-print("")
-print("----------------------------------Test3--------------------------------------")
-res = main('Bon', 'F9sGnd4$')
-print("")
-print("----------------------------------Test4--------------------------------------")
-res = main([1,2], 'F9sGnd4$')
-print("")
-print("----------------------------------Test5--------------------------------------")
-res = main(['b','n'], 'F9sGnd4$')
-print("")
-print("----------------------------------Test6--------------------------------------")
-res = main(12354678, 'F9sGnd4$')
-print("")
-print("----------------------------------Test7--------------------------------------")
-res = main('Bonjour!', 'F9s')
-print("")
-print("----------------------------------Test8--------------------------------------")
-res = main('Bonjour!', ['b','n','t'])
-print("")
-print("----------------------------------Test9--------------------------------------")
-res = main('Bonjour!', [1,2,3])
-print("")
-print("----------------------------------Test8--------------------------------------")
-res = main('Bonjour!', 54847525)
+#print("")
+#print("----------------------------------Test1--------------------------------------")
+#res = main('Bonjour!', '12345678')
+
+#print("")
+#print("----------------------------------Test2--------------------------------------")
+#res = main('Bonjour!', 'F9sGnd4$')
 
 
+#print("")
+#print("----------------------------------Test3--------------------------------------")
+#res = main('Bon', 'F9sGnd4$')
+#print("")
+#print("----------------------------------Test4--------------------------------------")
+#res = main([1,2], 'F9sGnd4$')
+#print("")
+#print("----------------------------------Test5--------------------------------------")
+#res = main(['b','n'], 'F9sGnd4$')
+#print("")
+#print("----------------------------------Test6--------------------------------------")
+#res = main(12354678, 'F9sGnd4$')
+#print("")
+#print("----------------------------------Test7--------------------------------------")
+#res = main('Bonjour!', 'F9s')
+#print("")
+#print("----------------------------------Test8--------------------------------------")
+#res = main('Bonjour!', ['b','n','t'])
+#print("")
+#print("----------------------------------Test9--------------------------------------")
+#res = main('Bonjour!', [1,2,3])
+#print("")
+#print("----------------------------------Test8--------------------------------------")
+res = main('Bojsfqhhsqjkhsfqhsjqhksfkqjsfkqsjhfkqsj!', '548j7525')
