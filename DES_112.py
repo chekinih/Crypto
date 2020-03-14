@@ -64,9 +64,9 @@ def int2bytes(i):
     return binascii.unhexlify(hex_string.zfill(n + (n & 1)))
 
 # Convertir des bits en une chaine de caracteres
-def text_from_bits(bits, encoding='utf-8', errors='surrogatepass'):
+def text_from_bits(bits, encoding='utf-8'):
     n = int(bits, 2)
-    return int2bytes(n).decode(encoding, errors)
+    return int2bytes(n).decode(encoding)
 
 # COnvertir une chaine de caractere en une liste de caracteres
 def convert_to_list(str):
@@ -138,6 +138,24 @@ def division(param):
 
     return left_half, right_half
 
+# Transformer la cle en entree en 64 bits
+def transform_key_64bits(k):
+    k = convert_list_to_char(k)
+    while(len(k) != 64):
+        k = '0' + k 
+    return(k)
+        
+# Separer la cle en entre de taille 112 bits en 2 cles k1 et k2 de taille 64 bits
+def separate_in_2_keys_64(k):
+    
+    # Generer les deux cles k1 et k2 de 56 bits a partir de la cle d entree de 112 bits  
+    k1, k2 = division(k)
+    
+    # Les cles k1 et k2 sont de taille 56 bits, on va ajouter des 0 au debut pour atteindre 64 bits
+    k1 = transform_key_64bits(k1)
+    k2 = transform_key_64bits(k2)
+    return k1, k2
+    
 # permutation generale
 # lst : un tableau d entree
 # index :  un tableau des index depend de la permutation souhaite
@@ -266,9 +284,8 @@ def SW(res_fk_prec, right_prec):
 # Chiffrer un plaintext (chaine de caractere de 8 bits) avec la cle k(chaine de caractere de 8 bits)
 def chiffrement(plaintext_binary_to_list,key):
 
-    key_to_binary=text_to_bits(key)
-    #print(key_to_binary)
-    key_binary_to_list=convert_to_list(key_to_binary)
+    key_to_binary = text_to_bits(key)
+    key_binary_to_list = convert_to_list(key_to_binary)
 
     key_table= generate_keys(key_binary_to_list)
     res_IP=IP(plaintext_binary_to_list)
@@ -292,13 +309,12 @@ def chiffrement(plaintext_binary_to_list,key):
 # Dechiffrer un ciphertext (resultat du chiffrement de plaintext) avec la cle k
 def dechiffrement(plaintext_binary_to_list,key):
 
-    key_to_binary=text_to_bits(key)
-    key_binary_to_list=convert_to_list(key_to_binary)
-
+    #key_to_binary=text_to_bits(key)
+    key_binary_to_list=convert_to_list(key)
     key_table= generate_keys(key_binary_to_list)
     res_IP=IP(plaintext_binary_to_list)
     res_prec=res_IP
-
+    
     i=15
     while i>=0:
         left_prec,right_prec=division(res_prec)
@@ -313,7 +329,7 @@ def dechiffrement(plaintext_binary_to_list,key):
 
     # Conversion de la liste des caracteres en une chaine de caracteres
     plaintext_binary = convert_list_to_char(plaintext_list)
-    print(plaintext_binary)
+    #print(len(plaintext_binary))    == >64
     plaintext=text_from_bits(plaintext_binary)
     return plaintext
 
@@ -335,68 +351,69 @@ def main(text, key):
     elif (type(key) != str):
         print("La clé doit être une chaine de caractères !")
         return -1
-    elif (len(key) != 8):
-        print("La clé doit être une chaine de 8 caractères (64 bits) !")
+    elif (len(key) != 14):
+        print("La clé doit être une chaine de 14 caractères (112 bits) !")
         return -1
     else:
         print('PlainText avant le chiffrement: ',text)
+    
+        # traiter la cle de 112 bits : 2 clés k1 et k2 de 56bits
+        # les etapes pour le chiffrement: 
+        # 1. Chiffrer avec k1
+        # 2. Déchiffrer avec k2
+        # 3. Chiffrer avec k1
+        
 
+        key_to_binary = text_to_bits(key)
+        #print(key_to_binary)
+        k1, k2 = separate_in_2_keys_64(key_to_binary)
+        #print(k2)  ==> bunaire chaine caractere
         # Separer en blocs de 64 bits pour cryptage
         blocs_binary_plaintext = np.array_split(plaintext_binary_to_list,len(plaintext_binary_to_list)/64 )
         # Chiffrage du message par blocs de 64 bits
         ciphertext = ""
         for i in range(0, len(blocs_binary_plaintext)):
-            ciphertext += chiffrement(blocs_binary_plaintext[i], key)
-
+            ciphertext += chiffrement(blocs_binary_plaintext[i], k1)
+        #print(type(ciphertext)) => str
+        
         # Convertir le texte chiffre en une liste
         ciphertext_binary_to_list = convert_to_list(ciphertext)
         #  Separer en blocs de 64 bits pour decryptage
         blocs_binary_ciphertext = np.array_split(ciphertext_binary_to_list,len(ciphertext_binary_to_list)/64 )
+        #print (len(blocs_binary_ciphertext)) okok
+        
+        #print(text_from_bits('0110101001100101011010110110101101101011011010100110101001101010'))
         # Dechiffrage du message crypte par blocs de 64 bits
-        plaintext = ""
+        plaintext_e_k1= ""
         for i in range(0, len(blocs_binary_ciphertext)):
-            plaintext += dechiffrement(blocs_binary_ciphertext[i], key)
+            plaintext_e_k1 += dechiffrement(blocs_binary_ciphertext[i], k2)
+            
+        #print(plaintext_e_k1)
+        # peut etre faire une fonction pour ce petit bloc 
+        
+       #ici
+       
+       
+       #ici
+        #('0011101001010010111010001011010111111101101000001111110011011
+                             #'100100110101000010100101011110100100101111110111011010000010001010101101
+                             #'0011111100111101000010111000111110101010000010010001111011001001101000011
+                             #'01111001000011110101000111110101011111100111011101100101110011011110111100
+                             #'100100101011001101011101'))
+        #print(text_from_bits('00001001'))
+        #print(text_from_bits('11010101'))  ==> probleme
+        #print(conversion_to_decimal('11010101'))
+            
+       
+            
+        #print('PlainText apres le dechiffrement: ',ciphertext)
 
-        print('PlainText apres le dechiffrement: ',plaintext)
 
-        if(text == plaintext):
-            print("Chiffrement et dechiffrement reussi avec la cle: "+key+" XD !")
-            return 0
-        else:
-            print("Chiffrement et dechiffrement non reussi avec la cle: "+ key +" X( !")
-            return -2
+        #if(text == ciphertext):
+            #print("Chiffrement et dechiffrement reussi avec la cle: "+key+" XD !")
+            #return 0
+        #else:
+            #print("Chiffrement et dechiffrement non reussi avec la cle: "+ key +" X( !")
+            #return -2
 
-
-#print("")
-#print("----------------------------------Test1--------------------------------------")
-#res = main('Bonjour!', '12345678')
-
-#print("")
-#print("----------------------------------Test2--------------------------------------")
-#res = main('Bonjour!', 'F9sGnd4$')
-
-
-#print("")
-#print("----------------------------------Test3--------------------------------------")
-#res = main('Bon', 'F9sGnd4$')
-#print("")
-#print("----------------------------------Test4--------------------------------------")
-#res = main([1,2], 'F9sGnd4$')
-#print("")
-#print("----------------------------------Test5--------------------------------------")
-#res = main(['b','n'], 'F9sGnd4$')
-#print("")
-#print("----------------------------------Test6--------------------------------------")
-#res = main(12354678, 'F9sGnd4$')
-#print("")
-#print("----------------------------------Test7--------------------------------------")
-#res = main('Bonjour!', 'F9s')
-#print("")
-#print("----------------------------------Test8--------------------------------------")
-#res = main('Bonjour!', ['b','n','t'])
-#print("")
-#print("----------------------------------Test9--------------------------------------")
-#res = main('Bonjour!', [1,2,3])
-#print("")
-#print("----------------------------------Test8--------------------------------------")
-res = main('jekkkjjj', '548j7525')
+res = main('je', '11111125235415')
