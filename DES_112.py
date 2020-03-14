@@ -9,6 +9,7 @@ Created on Sat Feb 22 13:50:58 2020
 from operator import xor
 import binascii
 import numpy as np
+import sys
 
 # les S-box
 s1=[[14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7],
@@ -330,8 +331,8 @@ def dechiffrement(plaintext_binary_to_list,key):
     # Conversion de la liste des caracteres en une chaine de caracteres
     plaintext_binary = convert_list_to_char(plaintext_list)
     #print(len(plaintext_binary))    == >64
-    plaintext=text_from_bits(plaintext_binary)
-    return plaintext
+    #plaintext=text_from_bits(plaintext_binary)
+    return plaintext_binary
 
 
 def main(text, key):
@@ -357,6 +358,7 @@ def main(text, key):
     else:
         print('PlainText avant le chiffrement: ',text)
     
+        print(text_to_bits(text))
         # traiter la cle de 112 bits : 2 clés k1 et k2 de 56bits
         # les etapes pour le chiffrement: 
         # 1. Chiffrer avec k1
@@ -384,10 +386,76 @@ def main(text, key):
         
         #print(text_from_bits('0110101001100101011010110110101101101011011010100110101001101010'))
         # Dechiffrage du message crypte par blocs de 64 bits
-        plaintext_e_k1= ""
+        plaintext_e_k2= ""
         for i in range(0, len(blocs_binary_ciphertext)):
-            plaintext_e_k1 += dechiffrement(blocs_binary_ciphertext[i], k2)
+            plaintext_e_k2 += dechiffrement(blocs_binary_ciphertext[i], k2)
+        
+        #print(plaintext_e_k2)
+        
+        
+        
+         # Transformer le text a chiffrer(qui est en binaire)en un multiple de 64
+        while(len(plaintext_e_k2) % 64 != 0):
+            plaintext_to_binary = '0' + plaintext_to_binary
+        plaintext_binary_to_list = convert_to_list(plaintext_to_binary)
+           
+        
+        # Separer en blocs de 64 bits pour cryptage
+        blocs_binary_plaintext = np.array_split(plaintext_binary_to_list,len(plaintext_binary_to_list)/64 )
+        # Chiffrage du message par blocs de 64 bits
+        ciphertext_c_k1 = ""
+        for i in range(0, len(blocs_binary_plaintext)):
+            ciphertext_c_k1 += chiffrement(blocs_binary_plaintext[i], k1)
             
+       # print(ciphertext_c_k1)
+            
+            
+       
+       # partie dechiffrement
+       
+       # Transformer le text a chiffrer(qui est en binaire)en un multiple de 64
+        while(len(ciphertext_c_k1) % 64 != 0):
+            ciphertext_c_k1 = '0' + ciphertext_c_k1
+        ciphertext_binary_to_list = convert_to_list(ciphertext_c_k1)
+        
+        # Separer en blocs de 64 bits pour cryptage
+        blocs_binary_ciphertext_d_k1 = np.array_split(ciphertext_binary_to_list,len(ciphertext_binary_to_list)/64 )
+        # Chiffrage du message par blocs de 64 bits
+        ciphertext_d_k1 = ""
+        for i in range(0, len(blocs_binary_ciphertext_d_k1)):
+            ciphertext_d_k1 += dechiffrement(blocs_binary_ciphertext_d_k1[i], k1)
+            
+        
+        
+         # dechiffrement avec k2 pour la partie dechiffrement
+        
+        # Convertir le texte chiffre en une liste
+        ciphertext_binary_to_list_d_k2 = convert_to_list(ciphertext_d_k1)
+        #  Separer en blocs de 64 bits pour decryptage
+        blocs_binary_ciphertext_d_k2 = np.array_split(ciphertext_binary_to_list_d_k2,len(ciphertext_binary_to_list_d_k2)/64 )
+ 
+        # Dechiffrage du message crypte par blocs de 64 bits
+        plaintext_d_k2 = ""
+        for i in range(0, len(blocs_binary_ciphertext_d_k2)):
+            plaintext_d_k2 += chiffrement(blocs_binary_ciphertext_d_k2[i], k2)
+           
+        
+        # Chiffrement avec k1 pour la partie dechiffrement
+        
+        
+        #  Transformer la representation binare du texte a chiffrer en un tableau de caracteres
+        plaintext_binary_to_list_d_k1 = convert_to_list(plaintext_d_k2)
+        
+        # Separer en blocs de 64 bits pour cryptage
+        blocs_binary_plaintext_d_k1 = np.array_split(plaintext_binary_to_list_d_k1,len(plaintext_binary_to_list_d_k1)/64 )
+        # Chiffrage du message par blocs de 64 bits
+        ciphertext_d_k1_ = ""
+        for i in range(0, len(blocs_binary_plaintext_d_k1)):
+            ciphertext_d_k1_ += dechiffrement(blocs_binary_plaintext_d_k1[i], k1)
+        
+        print((ciphertext_d_k1_))
+        
+        
         #print(plaintext_e_k1)
         # peut etre faire une fonction pour ce petit bloc 
         

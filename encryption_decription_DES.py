@@ -9,6 +9,9 @@ Created on Sat Feb 22 13:50:58 2020
 from operator import xor
 import binascii
 import numpy as np
+import sys
+import os
+import io
 
 # les S-box
 s1=[[14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7],
@@ -126,7 +129,7 @@ def logical_xor(x1, x2):
 def xor_EP_K(res_EP, k):
     return logical_xor(res_EP, k)
 
-# Diviser un tableau en deux left et right
+# Diviser un tableau passe en parametre en deux left et right
 def division(param):
     left_half = []
     right_half = []
@@ -263,7 +266,7 @@ def fk(res_prec, k):
 def SW(res_fk_prec, right_prec):
     return right_prec + res_fk_prec
 
-# Chiffrer un plaintext (chaine de caractere de 8 bits) avec la cle k(chaine de caractere de 8 bits)
+# Chiffrer un plaintext (chaine de caractere de 64 bits) avec la cle k(chaine de caractere de 64 bits)
 def chiffrement(plaintext_binary_to_list,key):
 
     key_to_binary=text_to_bits(key)
@@ -313,7 +316,7 @@ def dechiffrement(plaintext_binary_to_list,key):
 
     # Conversion de la liste des caracteres en une chaine de caracteres
     plaintext_binary = convert_list_to_char(plaintext_list)
-    print(plaintext_binary)
+    #print(plaintext_binary)
     plaintext=text_from_bits(plaintext_binary)
     return plaintext
 
@@ -330,13 +333,13 @@ def main(text, key):
     plaintext_binary_to_list = convert_to_list(plaintext_to_binary)
 
     if (type(text) != str) :
-        print("Le text à chiffrer doit être une chaine de caractères !")
+        print("Erreur: Le text à chiffrer doit être une chaine de caractères !")
         return -1
     elif (type(key) != str):
-        print("La clé doit être une chaine de caractères !")
+        print("Erreur: La clé doit être une chaine de caractères !")
         return -1
     elif (len(key) != 8):
-        print("La clé doit être une chaine de 8 caractères (64 bits) !")
+        print("Erreur: La clé doit être une chaine de 8 caractères (64 bits) !")
         return -1
     else:
         print('PlainText avant le chiffrement: ',text)
@@ -399,4 +402,25 @@ def main(text, key):
 #res = main('Bonjour!', [1,2,3])
 #print("")
 #print("----------------------------------Test8--------------------------------------")
-res = main('jekkkjjj', '548j7525')
+
+def read_file(path):
+    f=io.open(path,mode='r')
+    return str(f.read())
+
+plaintext = 'Vous pouvez tester en utilisant les arguments: plaintext key'
+key = '548j75d4'
+
+
+if (len(sys.argv)>1):
+        arg1=str(sys.argv[1])
+        if os.path.isfile(arg1):
+            plaintext=read_file(arg1)
+            print(type(plaintext))
+        else:
+           plaintext=arg1 
+            
+# recuperer la clef
+if (len(sys.argv)>2):
+        key=str(sys.argv[2])
+
+res = main(plaintext, key)

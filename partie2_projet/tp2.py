@@ -10,6 +10,7 @@ from Crypto.Cipher import AES
 import sys
 import base64
 import Padding
+import os
 
 plaintext= 'Meriam Hakima'
 key='dkkf4'
@@ -41,8 +42,6 @@ def get_key(password, salt, klen=32, ilen=16, msgdgst='md5'):
         key = key_[:klen]
         
         iv = key_[klen:klen+ilen]
-        print("iv "+ iv)
-        print("cle "+ key)
         return key,iv
         
     except UnicodeDecodeError:
@@ -77,3 +76,7 @@ ctext = b'Salted__' + salt.decode('hex') + ciphertext
 plaintext = decrypt(ciphertext,key,AES.MODE_ECB,salt)
 plaintext = Padding.removePadding(plaintext,mode='CMS')
 print ("\nDecrypted:\t"+plaintext)
+
+c= os.system('ls -l > t.txt')
+
+
