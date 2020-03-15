@@ -6,7 +6,7 @@
 """
 from operator import xor
 import binascii
-
+import sys
 
 # les S-box
 s0 = [[1, 0, 3, 2],
@@ -166,7 +166,7 @@ def concat_ls_keys(left, right):
     tab = left + right
     return tab
 
-# Generer les 16 cles a partir d une cles de 10 bits
+# Generer les cles a partir d une cles de 10 bits
 def generate_k(key):
     permuted_10 = permute_10(key)
     left, right = division(permuted_10)
@@ -214,24 +214,15 @@ def fk(res, k):
 def SW(res_fk1, right_ip):
     return right_ip + res_fk1
 
-# La cle doit etre une chaine de caracteres
 # Chiffrer un caractere (sur 8 bits) avec la cle k(chaine de caractere de 10 bits)
 def chiffrement(char, key):
-    if(len(char) != 1):
-        print("Erreur: Le plainText doit etre un caractere code sur 8 bits")
-        return -1
-    if(len(key) != 10):
-        print("Erreur: La cle doit etre une chaine de caracteres avec une longueur 10 ")
-        return -1
+        
     # convert the binary string to an array of char
     charToBinary = text_to_bits(char)
     charToBinary_list = convert_to_list(charToBinary)
 
-    # convert the binary string key to an array of char
-    key_list = convert_to_list(key)
-
     # Generation des cles
-    k1, k2 = generate_k(key_list)
+    k1, k2 = generate_k(key)
 
     # Appliquer IP: la permutation initiale
     res_IP= IP(charToBinary_list)
@@ -259,19 +250,13 @@ def chiffrement(char, key):
 # Dechiffrer un ciphertext (resultat du chiffrement de plaintext) avec la cle k
 def dechiffrement(ciphertext, key):
     if(len(ciphertext) != 8):
-        print("Erreur : Le ciphertext doit etre une chaine de caracteres avec une longueur 8 composee de 0 et de 1 ")
-        return -1
-    if(len(key) != 10):
-        print("Erreur : La cle doit etre une chaine de caracteres avec une longueur 10 ")
+        print("Erreur : Le ciphertext doit etre une chaine de caracteres avec une longueur 8 bits composee de 0 et de 1 ")
         return -1
     # convert the binary string to an array of char
     charToBinary_list = convert_to_list(ciphertext)
 
-    # convert the binary string key to an array of char
-    key_list = convert_to_list(key)
-
     # Generation des cles
-    k1, k2 = generate_k(key_list)
+    k1, k2 = generate_k(key)
 
     # Appliquer IP: la permutation initiale
     res_IP= IP(charToBinary_list)
@@ -297,23 +282,51 @@ def dechiffrement(ciphertext, key):
     return plaintext
 
 def main(char, key):
-    print('PlainText avant le chiffrement: '+ char)
+    if(len(key) != 2):
+        print("Erreur: La cle doit etre une chaine de caracteres composee de deux caracteres")
+        return False
+    if(len(char) != 1):
+        print("Erreur: Le plainText doit etre un caractere code sur 8 bits")
+        return False
+    
+    # Convertir la cle en binaire
+    key_to_binary=text_to_bits(key)
+    # convert the binary string key to an array of char
+    key_list=convert_to_list(key_to_binary)
+    
+    # Apres la conversion de la cle en binaire, on obtient 16 bits, on prend que les 10 premiers bits pour former une cle de 10 bits
+    key_list_10 = []
+    for i in range(0, 10):
+        key_list_10.append(key_list[i])
+        
+    print('\nPlaintext :\t'+ char)
     print('Clef: '+ key)
-    ciphertext = chiffrement(char, key)
+    # Appel de la fonction chiffrement qui chiffre le caractere avec la clef passee en parametre 
+    ciphertext = chiffrement(char, key_list_10)
+    
+    # Regarder si le chiffrement ne renvoie pas d erreur
     if(ciphertext != -1):
-        print('Chiffrement du "' + char + '" : '+ ciphertext)
-        plaintext = dechiffrement(ciphertext, key)
-        print('PlainText apres le dechiffrement: '+plaintext)
+        print('Chiffrement du plainText "' + char + '" : '+ ciphertext)
+        plaintext = dechiffrement(ciphertext, key_list_10)
+        print('\nDecrypted:\t '+plaintext)
     
         if(char == plaintext):
             return True
         else:
             return False
-  
 
-res = main('dg', '1234678f90')
+
+plaintext = 'k'
+key = 'C4'
+# Recuperer le plaitext et la cle si ces derniers sont passes en argument en ligne de commande
+if (len(sys.argv)>1):
+        plaintext=str(sys.argv[1])
+if (len(sys.argv)>2):
+        key=str(sys.argv[2])
+        
+res = main(plaintext, key)
 if(res):
-    print("Chiffrement et dechiffrement reussi XD !")
+    print("\nChiffrement et dechiffrement reussi XD !")
 else:
-    print("Chiffrement et dechiffrement non reussi X( !")
+    print("\nChiffrement et dechiffrement non reussi X( !")
     
